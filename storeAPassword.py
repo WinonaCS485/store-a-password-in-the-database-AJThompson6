@@ -30,8 +30,9 @@ def insertIntoTable(username, prefixSalt, hashedPassword):
     connection = createConnection()
     try:
         with connection.cursor() as cursor:
-            sql = """INSERT INTO loginCredentials(username, salt, hash) VALUES("%s", "%s", "%s")""" % (username, prefixSalt, hashedPassword.hexdigest())
-            cursor.execute(sql)   # Execute the SQL command
+            sql = "INSERT INTO loginCredentials(username, salt, hash) VALUES(%s, %s, %s)"
+            toSQL = (username, prefixSalt, hashedPassword.hexdigest())
+            cursor.execute(sql, toSQL)   # Execute the SQL command
             connection.commit()   # Commit to save your changes.
     finally:
         connection.close()
@@ -41,19 +42,19 @@ def checkPassword(secondUsername, testPassword):
     connection = createConnection() 
     try:
         with connection.cursor() as cursor:
-            sql = "SELECT * FROM loginCredentials"
-            cursor.execute(sql)
+            sql = "SELECT * FROM loginCredentials WHERE username = %s"
+            cursor.execute(sql, secondUsername)
             for row in cursor:
-                db_username = row['username']
-                if(secondUsername == db_username):
-                    salt = row['salt']
-                    hash = row['hash']
-                    saltedPassword = salt + testPassword
-                    hashedPassword = hashlib.sha256(saltedPassword.encode())
-                    if hashedPassword.hexdigest() == hash:
-                        print("Username and password found")
-                    else:
-                        print("You entered an incorrect password")
+                salt = row['salt']
+                hash = row['hash']
+                
+                saltedPassword = salt + testPassword
+                hashedPassword = hashlib.sha256(saltedPassword.encode())
+                
+                if hashedPassword.hexdigest() == hash:
+                    print("Username and password found")
+                else:
+                    print("You entered an incorrect password")
     finally:
         connection.close()
         
